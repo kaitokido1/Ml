@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة الصيغة الأولية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .container {
+            background: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            margin: auto;
+            text-align: right;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #2980b9;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #3498db;
+        }
+
+        #steps {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        #steps div {
+            background: #f1f1f1;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body dir="rtl">
+    <h1>حاسبة الصيغة الأولية</h1>
+    <div class="container">
+        <form id="formulaForm">
+            <div class="form-group">
+                <label for="element">رمز العنصر:</label>
+                <input type="text" id="element" placeholder="أدخل رمز العنصر (مثل: C)" required>
+            </div>
+            <div class="form-group">
+                <label for="percentage">النسبة المئوية (%):</label>
+                <input type="number" id="percentage" step="0.01" placeholder="أدخل النسبة المئوية (مثل: 85.63)" required>
+            </div>
+            <div class="form-group">
+                <label for="molarMass">الكتلة المولية (غرام/مول):</label>
+                <input type="number" id="molarMass" step="0.01" placeholder="أدخل الكتلة المولية (مثل: 12.01)" required>
+            </div>
+            <button type="button" onclick="addElement()">إضافة عنصر</button>
+        </form>
+
+        <div id="steps"></div>
+    </div>
+    <footer>صنع بحب لعشاق الكيمياء ❤️</footer>
+
+    <script>
+        const elements = [];
+        const stepsContainer = document.getElementById("steps");
+
+        function addElement() {
+            const element = document.getElementById("element").value.trim();
+            const percentage = parseFloat(document.getElementById("percentage").value);
+            const molarMass = parseFloat(document.getElementById("molarMass").value);
+
+            if (!element || isNaN(percentage) || isNaN(molarMass)) {
+                alert("يرجى ملء جميع الحقول بشكل صحيح!");
+                return;
+            }
+
+            elements.push({ element, percentage, molarMass });
+            updateSteps();
+        }
+
+        function updateSteps() {
+            stepsContainer.innerHTML = "";
+
+            const moleRatios = [];
+
+            // Step 1: حساب عدد المولات
+            const step1 = document.createElement("div");
+            step1.innerHTML = `<strong>الخطوة 1:</strong> حساب عدد المولات لكل عنصر.`;
+            elements.forEach(({ element, percentage, molarMass }) => {
+                const moles = (percentage / molarMass).toFixed(2);
+                moleRatios.push(parseFloat(moles));
+                step1.innerHTML += `<br>${element}: ${percentage} / ${molarMass} = ${moles} مول`;
+            });
+            stepsContainer.appendChild(step1);
+
+            // Step 2: تطبيع نسب المولات
+            const smallestMole = Math.min(...moleRatios);
+            const normalized = moleRatios.map(moles => moles / smallestMole);
+
+            // التحقق من الكسور مثل .5
+            const needsAdjustment = normalized.some(ratio => (ratio % 1).toFixed(1) === "0.5");
+            const adjustedNormalized = needsAdjustment
+                ? normalized.map(ratio => ratio * 2)
+                : normalized;
+
+            const step2 = document.createElement("div");
+            step2.innerHTML = `<strong>الخطوة 2:</strong> تطبيع نسب المولات.<br>`;
+            adjustedNormalized.forEach((ratio, i) => {
+                const displayRatio = ratio.toFixed(1);
+                step2.innerHTML += `${elements[i].element}: ${moleRatios[i]} / ${smallestMole} = ${displayRatio}<br>`;
+            });
+            stepsContainer.appendChild(step2);
+
+            // Step 3: عرض الصيغة
+            const formula = adjustedNormalized
+                .map((ratio, i) => {
+                    const roundedRatio = Math.round(ratio);
+                    return roundedRatio === 1 ? elements[i].element : `${elements[i].element}${roundedRatio}`;
+                })
+                .join("");
+
+            const step3 = document.createElement("div");
+            step3.innerHTML = `<strong>الخطوة 3:</strong> الصيغة الأولية: <strong>${formula}</strong>`;
+            stepsContainer.appendChild(step3);
+        }
+    </script>
+</body>
+</html>
